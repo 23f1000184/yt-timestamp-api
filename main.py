@@ -1,3 +1,4 @@
+# force rebuild
 import os
 import time
 from fastapi import FastAPI
@@ -22,7 +23,7 @@ def download_audio(url: str) -> str:
         "outtmpl": "audio.%(ext)s",
         "quiet": True,
         "noplaylist": True,
-        "postprocessors": []  # 🔴 disables ffmpeg completely
+        "postprocessors": []
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
