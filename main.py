@@ -17,25 +17,16 @@ class AskRequest(BaseModel):
     topic: str
 
 def download_audio(url: str) -> str:
-    filename = f"audio_{uuid.uuid4()}.mp3"
-
     ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": filename,
+        "format": "bestaudio[ext=m4a]/bestaudio",
+        "outtmpl": "audio.%(ext)s",
         "quiet": True,
         "noplaylist": True,
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-            }
-        ],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-
-    return filename
+        info = ydl.extract_info(url, download=True)
+        return ydl.prepare_filename(info)
 
 @app.post("/ask")
 def ask(data: AskRequest):
