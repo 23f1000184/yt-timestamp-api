@@ -1,5 +1,4 @@
 import os
-import uuid
 import time
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -16,28 +15,28 @@ class AskRequest(BaseModel):
     video_url: str
     topic: str
 
+
 def download_audio(url: str) -> str:
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
         "outtmpl": "audio.%(ext)s",
         "quiet": True,
         "noplaylist": True,
+        "postprocessors": []  # 🔴 disables ffmpeg completely
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         return ydl.prepare_filename(info)
 
+
 @app.post("/ask")
 def ask(data: AskRequest):
-
     audio_path = download_audio(data.video_url)
 
     try:
-        # Upload to Gemini Files API
         file = genai.upload_file(path=audio_path)
 
-        # Wait until ACTIVE
         while file.state.name != "ACTIVE":
             time.sleep(2)
             file = genai.get_file(file.name)
@@ -54,9 +53,7 @@ def ask(data: AskRequest):
                 "response_mime_type": "application/json",
                 "response_schema": {
                     "type": "object",
-                    "properties": {
-                        "timestamp": {"type": "string"}
-                    },
+                    "properties": {"timestamp": {"type": "string"}},
                     "required": ["timestamp"]
                 }
             }
