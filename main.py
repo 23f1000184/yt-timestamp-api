@@ -6,9 +6,11 @@ from pydantic import BaseModel
 import yt_dlp
 import google.generativeai as genai
 from dotenv import load_dotenv
+from google import genai
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI()
 
@@ -36,21 +38,20 @@ def ask(data: AskRequest):
     audio_path = download_audio(data.video_url)
 
     try:
-        file = genai.upload_file(path=audio_path)
+        file = client.files.upload(file=audio_path)
 
-        while file.state.name != "ACTIVE":
+        while file.state != "ACTIVE":
             time.sleep(2)
-            file = genai.get_file(file.name)
-
-        model = genai.GenerativeModel("gemini-1.5-pro")
+            file = client.files.get(name=file.name)
         
-        response = model.generate_content(
-            [
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
                 file,
                 f"Find the FIRST timestamp where the topic '{data.topic}' is spoken. "
                 "Return ONLY in HH:MM:SS format."
             ],
-            generation_config={
+            config={
                 "response_mime_type": "application/json",
                 "response_schema": {
                     "type": "object",
@@ -59,7 +60,7 @@ def ask(data: AskRequest):
                 }
             }
         )
-
+        
         timestamp = response.parsed["timestamp"]
 
         return {
