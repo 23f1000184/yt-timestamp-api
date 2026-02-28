@@ -42,8 +42,8 @@ def ask(data: AskRequest):
             time.sleep(2)
             file = genai.get_file(file.name)
 
-        model = genai.GenerativeModel("gemini-2.0-flash")
-
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
         response = model.generate_content(
             [
                 file,
